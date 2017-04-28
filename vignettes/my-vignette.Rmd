@@ -1,0 +1,715 @@
+---
+title: "Introducing: Quality Control"
+author: "Ralph Moeller Trane"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introducing: Quality Control}
+  \VignetteEngine{knitr::rmarkdown}
+  \VignetteEncoding{UTF-8}
+---
+
+```{r include = FALSE}
+library(knitr)
+knitr::opts_knit$set(root.dir = 'K:/Stat/RMT/QC/Universal/OCT/16-11')
+```
+
+This vignette is intended to show how reproducibility figures are created. The goal is to ensure the process is properly documented and can easily be understood by third party, if necessary. 
+
+The goal of reproducibility figures is to visualize the agreement between graders. To do this, we regrade 5% of all images, and then compare the two gradings. For questions with categorical outcome, we use contingency tables and the kappa statistic to summarize agreement, for questions with continuous outcome, we use InterClass Correlation (ICC) and the Bland-Altman plot. 
+
+The product of this analysis consists of three parts: 
+
+1. a frontpage, summarizing the data used, including number of images from each study/modality/grader,
+2. plots of the aforementioned type, one per question, 
+3. a table summarizing the results. 
+
+Before these can be produced, data must be carefully reshaped into something useful. The goal is a data frame with one row per graded image, and two columns per question: one for ST gradings, one for QC gradings. 
+
+The very first thing we do is to define the date band we work with. In this case, we look at Q3 of 2016. 
+
+```{r eval = FALSE} 
+date.start <- as.Date("2016-07-01") ## YYYY-MM-DD
+date.end <- as.Date("2016-10-31")   ## YYYY-MM-DD
+
+```
+
+Next, we load the packages we need.
+
+```{r eval = FALSE}
+library(reshape2)
+library(timeDate)
+library(QualityControl)
+library(readxl)
+library(tidyverse)
+```
+
+Make sure to set the working directory to the folder you want to work in. I have my folders set up such that within this folder, I have four important subfolders:
+
+1. Data_Files: where I put all my data files...
+2. Frontpage: this folder contains the .snw documents used to create the frontpage for the final report, and include the graphs and tables created here
+3. Grader_Specific_Agreement_Table: this folder is for agreement tables. The workflow here includes code to save an excel file for each grader with their personal reproducibility results. Those are saved to this folder.
+4. Reports: this is where we will save the plots and the final reports.
+
+
+```{r eval = FALSE}
+## Set directory
+setwd('K:/Stat/RMT/QC/Universal/OCT/16-11/')
+```
+
+Using `list.files`, we get a character vector with the names of all data files in the folder `data.dir` (don't forget to set this, if your structure is not the same as mine). Note how we remove temporary files by checking if the file name starts with `~`. 
+
+```{r eval = FALSE}
+## Data directory
+data.dir <- 'Data_Files/'
+
+## Import all excel files from data.dir
+files <- list.files(data.dir, pattern = 'xlsx') %>%
+    .[which(substr(x = ., start = 1, stop = 1) != "~")]
+
+
+```
+
+
+We use the `read_excel` function from the `readxl` package to load all data. The function `load.file` helps us by simply importing the file `filename.xlsx` and creating new variable `Project` with `filename` as its value. We then use `map` from the `purrr` package to apply this function to each element of `files`, and then row bind the results using `rbind.fill` from the `plyr` packages. 
+
+```{r eval = FALSE}
+## Read all files - we read everything as text to avoid warnings and other issues. 
+orig.data <- files %>%
+  map(~load.file(data.dir = data.dir, file = .)) %>%
+  setNames(do.call(rbind, strsplit(files, fixed = TRUE, split = '.'))[,1])
+
+All.Data <- plyr::rbind.fill(orig.data)
+```
+
+Next, we filter the data such that we only look at the modality we want, in this case 'OCT'. 
+
+```{r eval = FALSE}
+## Only Procedure == OCT
+All.Data <- filter(All.Data, Procedure == 'SD-OCT')
+```
+
+We need to take a look at the questions. The next three lines of code prints all questions in the console, such that these can simply be copy and pasted into a vector. We call that vector Qs. We then comment out the questions we do not want to include in the report. Typically, this will be `Comments` or similar. 
+
+```{r eval = FALSE}
+
+#### Data filtering
+## Get all questions
+cat(paste0("'",
+           paste(sort(unique(All.Data$Question)),
+                 collapse = "', \n'"), "' \n"))
+
+## Copy/paste result of above and encapsulate in c( )
+Qs <- c('Absence of confounding lesions',
+        'Absence of hemorrhage >50% of lesion',
+        'Absence of macular scar >50% of lesion',
+        'Absence of RPE atrophy and fibrosis',
+        'Absence of RPE tear',
+        'Absence of traction or epiretinal membrane',
+        'Center field thickness reliable',
+        'Center point thickness reliable',
+        'Center subfield thickness reliable',
+        'Central Retinal Thickness (CRT) µm',
+        'CNV Classification',
+        'CNV greater than 50% of total lesion area',
+        'CNV less than or equal to 12 DA',
+        #'Comments',
+        #'Comments (OCT artifacts)',
+        'Confidence score',
+        'Confidence Score',
+        'CST >= 310',
+        'Cystoid Spaces',
+        'Eligibility',
+        #'Eligibility Comment',
+        #'Eligibility Comments',
+        'Eligible',
+        'ERM',
+        'Eye movement artifacts',
+        'Intraretinal Fluid',
+        'Macular Edema Present',
+        'Macular Hole',
+        'Neovascular LC at center point',
+        'Neovascular LC maximum thickness',
+        'Neovascular LC Presence',
+        'OCT Confidence Score',
+        'Other artifact(s)',
+        'PED Maximum Thickness',
+        'PED Thickness at Center Point',
+        'Photoreceptor Center Subfield Thickness Reliable',
+        'Photoreceptor Thickness Grid',
+        'Poor image quality',
+        'Post Screen Baseline Submitted?',
+        'Presence of CNV per protocol',
+        'PVD',
+        'Retinal thickness grid',
+        'RPE Rip/Tear',
+        'RTD',
+        'Scan(s) missing',
+        'Serous/Hemorrhagic PED Presence',
+        'Severe Vitreomacular Traction',
+        'SHRM',
+        'SSRD maximum thickness',
+        'SSRD Presence',
+        'SSRD thickness at center point',
+        'Status of IS-OS within Central Subfield',
+        'Study Eye Eligible',
+        'Study Eye Images Present',
+        'Thickness grid reliable',
+        'Z-offset error')
+```
+
+We see that some questions are present multiple times in the list under different names (for example 'Confidence Score', 'Confidence score', and 'OCT Confidence Score' all refer to the same thing). We make sure to change this such that all questions are only represented by one string. 
+
+We also make sure 'Cannot Grade' is spelled exactly like that. This will make life easier when we later on have to specify a cannot grade string for each variable. 
+
+Finally, we filter the data frame `All.Data` so that it only contains questions from `Qs`. 
+
+```{r eval = FALSE}
+## Some clean-up in the Question column:
+All.Data <- All.Data %>%
+    mutate(Question = ifelse(Question %in% c('Confidence Score', 'Confidence score', 'OCT Confidence Score'),
+                             'Confidence Score', Question),
+           Answer = ifelse(Answer %in% c('Cannot Grade', 'Cannot grade', 'cannot grade'),
+                           'Cannot Grade',
+                           Answer))
+
+##  and Questions in Qs
+All.Data <- subset(All.Data,
+                   Question %in% Qs)
+```
+
+
+Now that we've restricted the `Question` column to the questions we're interested in, we overwrite `Qs` with the new questions. 
+
+```{r}
+## Update Qs now that some have been collapsed to one
+Qs <- sort(unique(All.Data$Question))
+```
+
+Next, we have to do some footwork. We need to go through all questions to which the answer potentially is a different column than `Answer`. All such questions won't have anything in the `Answer` column besides blanks, `NA`, 'Not applicable', and 'Cannot Grade' (remember we made sure that all instances of 'Cannot Grade' are spelled this exact way earlier). For each question, we check to see if this is the case. If so, we save the question to the vector `qs`. 
+
+```{r eval = FALSE}
+## Questions with answers outside Answer column
+# Identify those questions:
+qs <- c()
+for(q in Qs){
+    tmp <- subset(All.Data, Question == q)
+    if(length(setdiff(unique(tmp$Answer),
+              c('', NA, 'Not applicable', 'Cannot Grade'))) == 0){
+        qs <- c(qs, q)
+    }
+}
+```
+
+We go through `qs` one entry at a time, looking for which other columns could contain the answer. (Cycle through by increasing `QQ` by 1 after each check). 
+
+`pos.ans.col` is a list with one element for each column of `All.Data` with all unique entries. 
+
+`pos.ans.col2` is a list with one element for each column of `All.Data`. Each element is simply a '0' (if that column only contains blanks, NA's, 'Not applicable', or 'Cannot Grade') or '1' (if that column contains something that could be the answer). 
+
+Finally, we look through all the elements of `pos.ans.col` for which the corresponding element of `pos.ans.col2` is a '1'. The column that contains the right answer for the given question is put in the vector `Qs.with.diff.answer`. This vector is named according to the questions. 
+
+```{r eval = FALSE}
+## Columns possibly containing answers
+QQ <- 1
+
+pos.ans.col <- apply(subset(All.Data, Question == qs[QQ]), 2, unique)
+
+pos.ans.col2 <- lapply(pos.ans.col, FUN = function(x){
+    if(length(setdiff(x, c('', NA, 'Not applicable', 'Cannot Grade'))) > 0){
+        1
+    } else {
+        0
+    }
+})
+
+
+# Find right column, put in vector
+pos.ans.col[which(pos.ans.col2 == 1)]
+qs[QQ]
+
+Qs.with.diff.answer <- c('DistanceLength',
+                         'DistanceLength',
+                         'DistanceLength',
+                         'DistanceLength',
+                         'ThicknessSector_C',
+                         'ThicknessSector_C',
+                         'DistanceLength',
+                         'DistanceLength')
+
+# Name vector as qs
+names(Qs.with.diff.answer) <- qs
+```
+
+Now we loop over all rows, and for each row we check if the question is in `Qs.with.diff.answer`. If it is, we fill out the new column `Answer2` with the value of the column we found to contain the right answer. If not, we simply transfer the value of `Answer` to `Answer2`. 
+
+```{r eval = FALSE}
+# Set up new variables for answers
+All.Data$Answer2 <- NA
+
+# Fill out that variable
+for(i in 1:nrow(All.Data)){
+    # If a rows variable is among names of Qs.with.diff.answer...
+    if(All.Data$Question[i] %in% names(Qs.with.diff.answer)){
+        # ... grab whatever is in column <Qs.with.diff.answer> and put in Answer2
+        All.Data$Answer2[i] <- All.Data[i, Qs.with.diff.answer[All.Data$Question[i]]]
+    } else {
+        # ... otherwise, copy Answer to Answer2
+        All.Data$Answer2[i] <- All.Data$Answer[i]
+    }
+}
+```
+
+Finally, we create new variables for timepoint (just to simplify things), and various new ID variables. These are mainly housekeeping variables to make sure that we match the right rows when we create the QC/ST pairs. 
+
+```{r eval = FALSE}
+#### New Answer2, TimePointN and ID variables
+## Timepoint Conversion
+TPs <- names(table(as.character(All.Data$TimePoint)))
+
+## New ID variable
+All.Data <- All.Data %>%
+  mutate(TimePoint_N = paste0('T', match(TimePoint, TPs)),
+         
+         Study_New_ID = paste(Project,
+                              RandomizedSubjectId,
+                              TimePoint_N,
+                              RandomizedLaterality,
+                              Laterality,
+                              sep = '_'),
+         
+         Study_New_ID2 = paste(Project, RandomizedSubjectId,
+                               RandomizedLaterality, Laterality,
+                               sep = '_'),
+         
+         Study_New_ID_Perf = paste(Project,
+                                   RandomizedSubjectId,
+                                   TimePoint_N,
+                                   RandomizedLaterality,
+                                   Laterality,
+                                   PerformedBy,
+                                   sep = '_'))
+
+```
+
+Now we get ready to transform the data from this long format (one row per question per eye) to the wide format (one row per eye, one column per question). If we look at the data, we notice that some variables (such as `SSRD thickness at center point`) 
+
+```{r eval = FALSE}
+return.right.answer <- function(x){
+
+    if(sum(!is.na(x)) == 1 & length(x > 1)){
+      tmp <- x[which(!is.na(x))]
+    } else {
+      tmp <- ifelse(length(unique(x)) == 1, unique(x), as.character(NA))
+    }
+  
+  return(tmp)
+}
+
+
+Wide.Data <- dcast(data = All.Data,
+                   formula = Study_New_ID + PerformedDate + PerformedBy + Project ~ Question,
+                   fun.aggregate = return.right.answer, 
+                   value.var = 'Answer2')
+
+## Rearrange some variables
+
+Wide.Data$'Confidence Score' <-
+    factor(substr(tolower(Wide.Data$'Confidence Score'),start = 1, stop = 3),
+           labels = c('CS1',
+                      'CS2',
+                      'CS3',
+                      'Not applicable'))
+
+Wide.Data$'Center point thickness reliable' <-
+    factor(Wide.Data$'Center point thickness reliable',
+           levels = c('Cannot Grade', 'Not applicable', 'No', 'Yes'))
+
+Wide.Data$'Center subfield thickness reliable' <-
+    factor(Wide.Data$'Center subfield thickness reliable',
+           levels = c('Cannot Grade', 'Not applicable', 'No', 'Yes'))
+
+Wide.Data$'Cystoid Spaces' <-
+    factor(Wide.Data$'Cystoid Spaces')
+levels(Wide.Data$'Cystoid Spaces')[c(1,6)] <- c('A/Q')
+Wide.Data$'Cystoid Spaces' <-
+    factor(Wide.Data$'Cystoid Spaces',
+           levels = c('A/Q',
+                      'Not applicable',
+                      'Definite, central subfield involved',
+                      'Definite, outside central subfield',
+                      'Cannot Grade'))
+
+Wide.Data$ERM <- factor(Wide.Data$ERM)
+levels(Wide.Data$ERM)[c(1,6)] <- c('A/Q')
+Wide.Data$ERM <-
+    factor(Wide.Data$ERM,
+           levels = c('A/Q', 'Not applicable', 'Definite, central subfield involved',
+                      'Definite, outside central subfield', 'Cannot Grade'))
+
+Wide.Data$'Intraretinal Fluid' <-
+    factor(Wide.Data$'Intraretinal Fluid')
+
+levels(Wide.Data$'Intraretinal Fluid')[c(1,5)] <- 'A/Q'
+
+
+
+Wide.Data$'Macular Hole' <- factor(Wide.Data$'Macular Hole')
+levels(Wide.Data$'Macular Hole')[c(1,6)] <- 'A/Q'
+Wide.Data$'Macular Hole' <-
+    factor(Wide.Data$'Macular Hole',
+           levels = c('A/Q', 'Cannot Grade', 'Not applicable',
+                      'Definite, full thickness hole',
+                      'Pseudohole or lamellar hole'))
+
+Wide.Data$'Neovascular LC Presence' <- factor(Wide.Data$'Neovascular LC Presence')
+levels(Wide.Data$'Neovascular LC Presence')[c(1,6)] <- c('A/Q')
+Wide.Data$'Neovascular LC Presence' <-
+    factor(Wide.Data$'Neovascular LC Presence',
+           levels = c('A/Q',
+                      'Not applicable',
+                      'Definite, central subfield involved',
+                      'Definite, outside central subfield',
+                      'Cannot Grade'))
+
+Wide.Data$PVD <- factor(Wide.Data$PVD)
+levels(Wide.Data$PVD)[c(1,7)] <- 'A/Q'
+Wide.Data$PVD <-
+    factor(Wide.Data$PVD,
+           levels = c('A/Q', 'Cannot Grade', 'Not applicable', 'Definite, non-adherent',
+                      'Definite, questionably adherent', 'Definite, partially adherent'))
+
+Wide.Data$RTD <- factor(Wide.Data$RTD)
+levels(Wide.Data$RTD)[c(1,6)] <- 'A/Q'
+Wide.Data$RTD <-
+    factor(Wide.Data$RTD,
+           levels = c('A/Q', 'Not applicable', 'Definite, central subfield involved',
+                      'Definite, outside central subfield', 'Cannot Grade'))
+
+
+Wide.Data$'Serous/Hemorrhagic PED Presence' <-
+    factor(Wide.Data$'Serous/Hemorrhagic PED Presence')
+levels(Wide.Data$'Serous/Hemorrhagic PED Presence')[c(1,6)] <- 'A/Q'
+Wide.Data$'Serous/Hemorrhagic PED Presence' <-
+    factor(Wide.Data$'Serous/Hemorrhagic PED Presence',
+           levels = c('A/Q', 'Not applicable', 'Definite, central subfield involved',
+                      'Definite, outside central subfield', 'Cannot Grade'))
+
+Wide.Data$SHRM <-
+    factor(Wide.Data$SHRM)
+levels(Wide.Data$SHRM)[c(1,5)] <- 'A/Q'
+
+Wide.Data$'SSRD Presence' <-
+    factor(Wide.Data$'SSRD Presence')
+levels(Wide.Data$'SSRD Presence')[c(1,6)] <- 'A/Q'
+Wide.Data$'SSRD Presence' <-
+    factor(Wide.Data$'SSRD Presence',
+           levels = c('A/Q', 'Not applicable', 'Definite, central subfield involved',
+                      'Definite, outside central subfield', 'Cannot Grade'))
+
+
+Wide.Data$'Thickness grid reliable' <-
+    factor(Wide.Data$'Thickness grid reliable',
+           levels = c('Not applicable','No', 'Yes', 'Cannot Grade'))
+
+Wide.Data$'Status of IS-OS within Central Subfield' <-
+    factor(Wide.Data$'Status of IS-OS within Central Subfield')
+Wide.Data$'Status of IS-OS within Central Subfield' <-
+    factor(Wide.Data$'Status of IS-OS within Central Subfield',
+           levels = c('Cannot Grade', 'Definitely Abnormal, Patchy',
+                      'Definitely Abnormal, Absent', 'Questionably Abnormal',
+                      'Normal'))
+
+Wide.Data$'Photoreceptor Center Subfield Thickness Reliable' <-
+    factor(
+        ifelse(Wide.Data$'Photoreceptor Center Subfield Thickness Reliable' == 'Cannot Grade',
+               'Cannot Grade',
+               Wide.Data$'Photoreceptor Center Subfield Thickness Reliable')
+    )
+
+Wide.Data$'Photoreceptor Center Subfield Thickness Reliable' <-
+    factor(Wide.Data$'Photoreceptor Center Subfield Thickness Reliable',
+           levels =
+               c('Not Applicable', 'No', 'Yes', 'Cannot Grade'))
+
+Wide.Data$'Z-offset error' <-
+    factor(Wide.Data$'Z-offset error')
+Wide.Data$'Z-offset error' <- factor(Wide.Data$'Z-offset error',
+                                     levels = c('Not applicable', 'No', 'Yes'))
+
+Wide.Data$'Poor image quality' <-
+    factor(Wide.Data$'Poor image quality')
+Wide.Data$'Poor image quality' <-
+    factor(Wide.Data$'Poor image quality',
+           levels = c('Not applicable', 'No', 'Yes'))
+
+
+##
+##
+#############################################
+
+#############################################
+## Section 4.
+## Split into ST and QC
+
+Wide.Data$STQC <- NA
+
+## Add ST.QC column
+for( SNI in unique(Wide.Data$Study_New_ID) ){
+
+    wh <- which(Wide.Data$Study_New_ID == SNI)
+
+    Dates.Ordered <-
+        order(as.Date(as.character(Wide.Data$PerformedDate[wh]),
+                      format = '%m/%d/%Y'))
+
+    Wide.Data$STQC[wh] <- c('ST', 'QC')[Dates.Ordered]
+}
+
+QC.Data <- subset(Wide.Data, STQC == 'QC')
+ST.Data <- subset(Wide.Data, STQC == 'ST')
+
+##
+#############################################
+
+#############################################
+## Section 5.
+## Merge ST and QC
+
+final <- merge(QC.Data, ST.Data, suffixes = c('.QC', '.ST'),
+               by = c('Study_New_ID',
+                      'Project'))
+
+## Rename some variables
+colnames(final)[which(colnames(final) == 'PerformedBy.QC')] <- 'Grader'
+
+## Make sure all QC dates are in date band
+final <- subset(final,
+                as.Date(PerformedDate.QC, format = '%m/%d/%Y') %in%
+                as.Date(date.start:date.end, origin = '1970-01-01'))
+
+final$Grader <- convert_names(names = final$Grader, out_format = 'Full Name')
+
+
+
+#############################################
+## Section 6.
+## Create Plots
+
+## Modality
+mod <- "SD-OCT"
+
+## Define vectors for each plot type with variables to be plotted using given plot type.
+crossA <-c('Absence of confounding lesions',
+           'Absence of hemorrhage >50% of lesion',
+           'Absence of macular scar >50% of lesion',
+           'Absence of RPE atrophy and fibrosis',
+           'Absence of RPE tear',
+           'Absence of traction or epiretinal membrane',
+           'Center field thickness reliable',
+           'Center point thickness reliable',
+           'Center subfield thickness reliable',
+           'CST >= 310',
+           'CNV Classification',
+           'CNV greater than 50% of total lesion area',
+           'CNV less than or equal to 12 DA',
+           'Confidence Score',
+           'Cystoid Spaces',
+           'Eligibility',
+           'Eligible',
+           'ERM',
+           'Eye movement artifacts',
+           'Intraretinal Fluid',
+           'Macular Edema Present',
+           'Macular Hole',
+           'Neovascular LC Presence',
+           'Other artifact(s)',
+           'Photoreceptor Center Subfield Thickness Reliable',
+           'Poor image quality',
+           'Post Screen Baseline Submitted?',
+           'Presence of CNV per protocol',
+           'PVD',
+           'RPE Rip/Tear',
+           'RTD',
+           'Scan(s) missing',
+           'Serous/Hemorrhagic PED Presence',
+           'Severe Vitreomacular Traction',
+           'SHRM',
+           'SSRD Presence',
+           'Status of IS-OS within Central Subfield',
+           'Study Eye Eligible',
+           'Study Eye Images Present',
+           'Thickness grid reliable',
+           'Z-offset error')
+
+## Create vector with whatever is used for cannot grade for each of the crossA vars.
+apply(final[,which(colnames(final) %in% paste(crossA, 'ST', sep = '.'))], 2, unique)
+
+cg.crossA <- rep('Cannot Grade', length(crossA))
+names(cg.crossA) <- crossA
+
+## What is not in crossA? Select plotX from here
+cat(paste0("'", paste(setdiff(Qs, crossA), collapse = "', \n '"), "'\n"))
+
+
+plotX <- c('Central Retinal Thickness (CRT) µm',
+           'Neovascular LC at center point',
+           'Neovascular LC maximum thickness',
+           'PED Maximum Thickness',
+           'PED Thickness at Center Point',
+           'Photoreceptor Thickness Grid',
+           'Retinal thickness grid',
+           'SSRD maximum thickness',
+           'SSRD thickness at center point')
+
+apply(Wide.Data[, which(colnames(Wide.Data) %in% plotX)], 2, function(x) sort(unique(x), decreasing = FALSE))
+
+cg.plotX <- rep('Cannot Grade', length(plotX))
+names(cg.plotX) <- plotX
+
+##############################################################################################
+####
+#### Preparation for graphs
+
+## Set up table for front page of grader specific QC report
+graders <- sort(unique(final$Grader))
+
+## Define foottext and main title
+maintitle <- paste(mod, "QC", sep = " ")
+foottext <- paste0(mod, ": ", format(date.start, "%b %Y"), " - ", format(date.end, "%b %Y"))
+extlabels <- as.list(rep(TRUE, length(crossA)))
+names(extlabels) <- crossA
+
+##### Overall Report
+pdf("Reports/graphs2.pdf", paper = 'USr', width = 11, height = 8)
+#pdf("Reports/PVD.pdf", paper = 'USr', width = 11, height = 8)
+## First, all crossA plots
+CrossA <- Plot.crossA(data = final,
+                      crossAs = crossA,
+                      vars = 'all',
+                      lab1 = 'ST',
+                      lab2 = 'QC',
+                      cannotgrades = cg.crossA,
+                      foottext = foottext,
+                      show.plot = FALSE,
+                      ext.labels = extlabels)
+
+## Then, all plotX/sd.plotaLimit plots
+PlotX <- Plot.plotx.sd.Limit(data = final,
+                             plotX = plotX,
+                             cantgrade = cg.plotX,
+                             vars = 'all',
+                             lab1 = 'ST',
+                             lab2 = 'QC',
+                             foottext = foottext,
+                             ranges = c(1,2,5),
+                             show.plot = FALSE)
+
+
+## Lastly, the table for the end of the report
+## Get names of plots created
+fnames <- c(names(CrossA), names(PlotX))
+
+## If more than 12 plots were created, then the tabulation has to be over
+## several pages.
+ll <- ceiling(length(c(CrossA, PlotX))/12)
+for(l in 1:ll){
+    ## l = 2
+    tabulation(style = "wkappa",
+               maintitle,
+               subtitle = paste("Fundus Photograph Reading Center (", l, "/", ll, ")",
+                                sep = ''),
+               footer="", fieldname = fnames[(12*l-11):min((12*l), length(fnames))],
+               stat0 = c(CrossA, PlotX)[(12*l-11):min(12*l, length(fnames))])
+}
+
+dev.off()
+
+###########
+#### Grader Specific QC
+
+##### Overall Report
+pdf("Reports/graphs_grader_specific.pdf", paper = 'USr', width = 11, height = 8)
+
+for (g in graders){
+
+    ## g = graders[1]
+
+    gr <- subset(final, Grader == g)
+
+    if(nrow(gr) < 10){
+        ## write.csv(file = paste0('Exact_Agreement/', g, '.csv'),
+        ##           exact.agreement[,,g])
+
+        print(paste('SKIPPING', g))
+        next()
+    }
+
+    print(g)
+
+    ## First, all crossA plots
+    CrossA <- Plot.crossA(data = gr,
+                          crossAs = crossA,
+                          vars = 'all',
+                          lab1 = 'ST',
+                          lab2 = 'QC',
+                          cannotgrades = cg.crossA,
+                          foottext = foottext,
+                          show.plot = FALSE,
+                          title2 = paste('Grader:', g),
+                          nes = c('', NA))
+
+
+    ## Then, all plotX/sd.plotaLimit plots
+    PlotX <- Plot.plotx.sd.Limit(data = gr,
+                                 plotX = plotX,
+                                 vars = 'all',
+                                 lab1 = 'ST',
+                                 lab2 = 'QC',
+                                 foottext = foottext,
+                                 cantgrade = cg.plotX,
+                                 title2 = paste('Grader:', g),
+                                 ranges = c(1,2,5),
+                                 show.plot = FALSE)
+
+    ## Get names of plots created
+    fnames <- c(names(CrossA),
+                names(PlotX))
+
+    ## If more than 12 plots were created, then the tabulation has to be over
+    ## several pages.
+    ll <- ceiling(length(c(CrossA, PlotX))/12)
+    for(l in 1:ll){
+        ## l = 2
+        tabulation(style = "wkappa",
+                   paste0(maintitle, ', Grader ', g),
+                   subtitle = paste("Fundus Photograph Reading Center (", l, "/", ll, ")",
+                                    sep = ''),
+                   footer="", fieldname = fnames[(12*l-11):min((12*l), length(fnames))],
+                   stat0 = c(CrossA, PlotX)[(12*l-11):min(12*l, length(fnames))])
+    }
+}
+
+dev.off()
+
+
+## Get exact agreement numbers
+ex.ag <- exact.agree.table(data = final,
+                           crossA = crossA,
+                           plotX = plotX,
+                           grads = graders)
+
+## Save all exact agreement numbers
+save.exact(exact.agreement = ex.ag, path = 'Grader_Specific_Agreement_Tables', file = NULL)
+
+## Table for front page of general report
+
+## Set up table for front page of overall QC report
+Tab <- frontpage.table(data = final, QCST = 'QC', col1.name = 'Trial')
+save(list = c('Tab', 'date.start', 'date.end'), file = 'Frontpage/tab.rda')
+
+
+## Table for front page of grader specific report
+Tab.grader <- grader.frontpage.table(data = final, QCST = 'QC')
+save(list = c('Tab.grader', 'date.start', 'date.end'), file = 'Frontpage/tab_grader.rda')
+```
