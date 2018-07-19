@@ -6,12 +6,12 @@ output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Introducing: Quality Control}
   \VignetteEngine{knitr::rmarkdown}
-  \VignetteEncoding{UTF-8}
+  \VignetteEncoding[UTF-8]{inputenc}
 ---
 
 ```{r include = FALSE}
 library(knitr)
-knitr::opts_knit$set(root.dir = 'K:/Stat/RMT/QC/Universal/OCT/16-11')
+knitr::opts_knit$set(root.dir = 'K:/Stat/RMT/QC/Universal/OCT/16-11', eval = FALSE)
 ```
 
 This vignette is intended to show how reproducibility figures are created. The goal is to ensure the process is properly documented and can easily be understood by third party, if necessary. 
@@ -31,7 +31,6 @@ The very first thing we do is to define the date band we work with. In this case
 ```{r eval = FALSE} 
 date.start <- as.Date("2016-07-01") ## YYYY-MM-DD
 date.end <- as.Date("2016-10-31")   ## YYYY-MM-DD
-
 ```
 
 Next, we load the packages we need.
@@ -181,7 +180,7 @@ All.Data <- subset(All.Data,
 
 Now that we've restricted the `Question` column to the questions we're interested in, we overwrite `Qs` with the new questions. 
 
-```{r}
+```{r eval = FALSE}
 ## Update Qs now that some have been collapsed to one
 Qs <- sort(unique(All.Data$Question))
 ```

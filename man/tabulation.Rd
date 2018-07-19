@@ -5,10 +5,11 @@
 \title{Create Table for End Page of QC}
 \usage{
 tabulation(style = c("icc", "wkappa"), maintitle = "", subtitle = "",
-  footer = "", fieldname = "", width = 30, stat0 = NULL, stat1 = -999,
-  stat2 = -999, stat3 = -999, stat4 = -999, stat5 = -999,
-  stat6 = -999, stat7 = -999, stat8 = -999, stat9 = -999,
-  stat10 = -999, stat11 = -999, stat12 = -999)
+  footer = "", fieldname = "", cex.factor = 1, width = 30,
+  stat0 = NULL, stat1 = -999, stat2 = -999, stat3 = -999,
+  stat4 = -999, stat5 = -999, stat6 = -999, stat7 = -999,
+  stat8 = -999, stat9 = -999, stat10 = -999, stat11 = -999,
+  stat12 = -999)
 }
 \arguments{
 \item{style}{'icc' or 'wkappa'; sets the type of table to be created}
@@ -21,6 +22,10 @@ tabulation(style = c("icc", "wkappa"), maintitle = "", subtitle = "",
 
 \item{fieldname}{vector with names for rows in table}
 
+\item{cex.factor}{numeric; factor to multiply all cex values by.}
+
+\item{width}{numeric; defuault is 30.}
+
 \item{stat0}{list of vectors with statistics to include. If NULL, statistics must be provided using stat1, ..., stat12}
 
 \item{stat1, ..., stat12}{vectors with statistics to include}
@@ -28,4 +33,3 @@ tabulation(style = c("icc", "wkappa"), maintitle = "", subtitle = "",
 \description{
 Summarizes the statistics into one table
 }
-

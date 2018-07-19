@@ -54,7 +54,9 @@ twograders.plotx <- function(grade1a, grade2a, label1, label2, range1, range2, r
                           lab=c(5,5,7),
                           cantgrade='',
                           maintitle="", subtitle = "", footer="",
-                          x1 = -999, x2 = -999, y1 = -999, y2 = -999)
+                          shiny = FALSE,
+                          x1 = -999, x2 = -999, y1 = -999, y2 = -999,
+                          mar = c(0,0,0,0))
     ## xlim=c(0,5), ylim=c(0,5),
 {
 
@@ -74,10 +76,16 @@ twograders.plotx <- function(grade1a, grade2a, label1, label2, range1, range2, r
     ##grade1 <- as.numeric(as.character(grade1))
     ##grade2 <- as.numeric(as.character(grade2))
     ## put in basic outline of plot areas
+    # if(names(dev.cur()) != 'null device'){
+    #   dev.off()
+    # }
 
+    # plot.new()
+    # ## par(new = TRUE)
+    # par(fig = c(0, 1, 0, 1), mar = c(0, 0, 0, 0), usr = c(0, 1, 0, 1), new = TRUE)
+    par(fig = c(0, 1, 0, 1), mar = mar, usr = c(0, 1, 0, 1), new = FALSE)
     plot.new()
-    ## par(new = TRUE)
-    par(fig = c(0, 1, 0, 1), mar = c(0, 0, 0, 0), usr = c(0, 1, 0, 1), new = TRUE)
+    par(fig = c(0, 1, 0, 1), mar = mar, usr = c(0, 1, 0, 1), new = TRUE)
     polygon(c(0, 0, 1, 1), c(0, 0.05, 0.05, 0), col = (grey(0.8)))   #change color
     polygon(c(0, 0, 1, 1), c(1, 0.87, 0.87, 1), col = (grey(0.8)))
     polygon(c(0, 0, 1, 1), c(0.255, 0.2, 0.2, 0.255), col = (grey(0.8)))
@@ -114,11 +122,11 @@ twograders.plotx <- function(grade1a, grade2a, label1, label2, range1, range2, r
     text(0.5, 0.025, paste(footer), cex = 0.67)
 
     ## range of x-axis
-    xmin <- min(grade1,grade2)
-    xmax <- max(grade1,grade2)
+    xmin <- ifelse(x1 > -999, x1, min(grade1,grade2))
+    xmax <- ifelse(x2 > -999, x2, max(grade1,grade2))
     ## range of y-axis
-    ymin <- min(grade1,grade2)
-    ymax <- max(grade1,grade2)
+    ymin <- ifelse(y1 > -999, y1, min(grade1,grade2))
+    ymax <- ifelse(y2 > -999, y2, max(grade1,grade2))
 
     diff <- grade2-grade1
 

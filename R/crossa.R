@@ -10,8 +10,6 @@
 #' @param data2 a vector of grades from grader 2; not a factor
 #' @param lab1 label for data1
 #' @param lab2 label for data2
-#' @param xlab label for x-axis
-#' @param ylab label for y-axis
 #' @param cantgrade vector containing values that are used for cannot grade and hence
 #' should not be included in within one step calculations.
 #' @param title1 main title of graph, line one
@@ -21,6 +19,9 @@
 #' vector with same length as there are levels of the variable considered, with strings
 #' to be stand-in for labels in squares while actual labels are printed in the lower left
 #' corner. If true, numbers are used as labels and automatically
+#' @param cex numeric; passed to par. Default 1.
+#' @param PLOT logical; if TRUE (default), figure is plotted. If FALSE, summary returned without any figures.
+#' @param mar vector of length four. Is passed to the mar argument of par. Default: c(0,0,0,0)
 #'
 #' @export
 #'
@@ -36,6 +37,7 @@
 #'        footer = "Comparison of Digital Synthetic Grades and
 #'                 Film Synthetic Grades")
 #'                 }
+#'                 data1a,
 
 ###############################################################
 ## Program:   crossa.ssc                                     ##
@@ -77,27 +79,33 @@ crossa <- function(data1a,
                    title1="",
                    footer="",
                    title2="",
-                   ext.labels = NULL){
+                   ext.labels = NULL,
+                   cex = 1,
+                   PLOT = TRUE,
+                   mar = c(0,0,0,0)){
 
   ## remove missing values
-  data1b <- data1a[(is.na(data1a) == F) & (is.na(data2a) == F)]
-  data2b <- data2a[(is.na(data1a) == F) & (is.na(data2a) == F)]
+  data1b <- data1a[!is.na(data1a) & !is.na(data2a)]
+  data2b <- data2a[!is.na(data1a) & !is.na(data2a)]
 
   ## remove values from cantgrade
   data1 <- data1b[(!data1b %in% cantgrade) & (!data2b %in% cantgrade)]
   data2 <- data2b[(!data1b %in% cantgrade) & (!data2b %in% cantgrade)]
 
 
-  ## Creates region for crosstab ##
-  plot.new() # frame()
-  ## R fix
-  par(fig = c(0,1,0,1), mar=c(0,0,0,0),usr=c(0,1,0,1), new = TRUE, pin = c(11,8))
-  polygon(c(0,0,1,1),c(0,1,1,0),density=0,lwd=3)
+  if(PLOT){
+    ## R fix
+    par(fig = c(0, 1, 0, 1), mar = mar, usr = c(0, 1, 0, 1), new = FALSE)
+    plot.new()
+    par(fig = c(0,1,0,1), mar=mar,usr=c(0,1,0,1), new = TRUE, pin = c(11,8), cex = cex)
 
-  par(fig=c(0,.62,.057,.863), mar=c(0,0,0,0),usr=c(0,1,0,1), new = TRUE)
+    ## Creates region for crosstab ##
+    polygon(c(0,0,1,1),c(0,1,1,0),density=0,lwd=3)
+
+    par(fig=c(0,.62,.057,.863), mar=mar,usr=c(0,1,0,1), new = TRUE, cex = cex)
+  }
 
   ## Reads in data, determines number of levels ##
-  aaa <- matrix(c(data1,data2),length(data1),2)
   ntot <- length(data1)
 
   if(is.numeric(data1)){
@@ -117,6 +125,7 @@ crossa <- function(data1a,
 
     lev <- unique(c(levels(data1), levels(data2)))
   }
+
   ## Get rid of empty level
   lev <- lev[! lev %in% c('', cantgrade)]
 
@@ -173,11 +182,11 @@ crossa <- function(data1a,
       adj <- c(0.5, 0.5)
       xoff2 <- yoff2 <- lab.xoff <- lab.yoff <- 0
     } else {
-        ## If ext.labels is NOT NULL and not TRUE, we put ext.labels in labs.
-        labs <- ext.labels
-        angle <- 45
-        adj <- c(0.5, 0.5)
-        xoff2 <- yoff2 <- lab.xoff <- lab.yoff <- 0
+      ## If ext.labels is NOT NULL and not TRUE, we put ext.labels in labs.
+      labs <- ext.labels
+      angle <- 45
+      adj <- c(0.5, 0.5)
+      xoff2 <- yoff2 <- lab.xoff <- lab.yoff <- 0
     }
   }
 
@@ -252,22 +261,24 @@ crossa <- function(data1a,
       }
 
       tot <- tot+nnn1
-      polygon(c(x1+(((nlev-i+j-1)/(2*nlev))*xtot),
-                x1+(((nlev-i+j)/(2*nlev))*xtot),
-                x1+(((nlev-i+j+1)/(2*nlev))*xtot),
-                x1+(((nlev-i+j)/(2*nlev))*xtot)),
-              c(y1+((((2*nlev)+1-i-j)/(2*nlev))*ytot),
-                y1+((((2*nlev)+1-i-j-1)/(2*nlev))*ytot),
-                y1+((((2*nlev)+1-i-j)/(2*nlev))*ytot),
-                y1+((((2*nlev)+1-i-j+1)/(2*nlev))*ytot)),
-              col=col2,
-              border=T)
+      if(PLOT){
+        polygon(c(x1+(((nlev-i+j-1)/(2*nlev))*xtot),
+                  x1+(((nlev-i+j)/(2*nlev))*xtot),
+                  x1+(((nlev-i+j+1)/(2*nlev))*xtot),
+                  x1+(((nlev-i+j)/(2*nlev))*xtot)),
+                c(y1+((((2*nlev)+1-i-j)/(2*nlev))*ytot),
+                  y1+((((2*nlev)+1-i-j-1)/(2*nlev))*ytot),
+                  y1+((((2*nlev)+1-i-j)/(2*nlev))*ytot),
+                  y1+((((2*nlev)+1-i-j+1)/(2*nlev))*ytot)),
+                col=col2,
+                border=T)
 
-      if (nnn1 > 0){
-        text(x1+(((nlev-i+j)/(2*nlev))*xtot),
-             y1+((((2*nlev)+1-i-j)/(2*nlev))*ytot),
-             paste(nnn1),
-             cex=1.0) #1.0 to 0.5
+        if (nnn1 > 0){
+          text(x1+(((nlev-i+j)/(2*nlev))*xtot),
+               y1+((((2*nlev)+1-i-j)/(2*nlev))*ytot),
+               paste(nnn1),
+               cex=1.0) #1.0 to 0.5
+        }
       }
     }
   }
@@ -275,125 +286,125 @@ crossa <- function(data1a,
   #######################################################################
   ## Creates lines which define the region and borders of the crosstab ##
   #######################################################################
-
-  for (i in 1:(nlev-1)){
-    segments(x1+((i/nlev)*xavg),y2+((i/nlev)*yavg),x2+((i/nlev)*xavg),y1+((i/nlev)*yavg),lty=1)
-    segments(x1+((i/nlev)*xavg),y2-((i/nlev)*yavg),x2+((i/nlev)*xavg),y3-((i/nlev)*yavg),lty=1)
-    segments(x1+((i/nlev)*xavg),y2+((i/nlev)*yavg),x1+((i/nlev)*xavg),y2+sepoff+((i/nlev)*yavg),lty=1,lwd=5)
-    segments(x1+((i/nlev)*xavg),y2+sepoff+((i/nlev)*yavg),x1-legoff+((i/nlev)*xavg),y2+legoff+sepoff+((i/nlev)*yavg),lty=1,lwd=4)
-    segments(x2+((i/nlev)*xavg),y3-((i/nlev)*yavg),x2+((i/nlev)*xavg),y3+sepoff-((i/nlev)*yavg),lty=1,lwd=5)
-    segments(x2+((i/nlev)*xavg),y3+sepoff-((i/nlev)*yavg),x2+legoff+((i/nlev)*xavg),y3+legoff+sepoff-((i/nlev)*yavg),lty=1,lwd=5)
-  }
-
-  polygon(c(x1,x2,x3,x2),c(y2,y1,y2,y3),density=0)
-  polygon(c(x1,x2,x2,x1),c(y2,y3,y3+sepoff,y2+sepoff),density=0,lwd=5)
-  polygon(c(x3,x2,x2,x3),c(y2,y3,y3+sepoff,y2+sepoff),density=0,lwd=5)
-  polygon(c(x1,x2,x2-legoff,x1-legoff),c(y2+sepoff,y3+sepoff,y3+sepoff+legoff,y2+sepoff+legoff),density=0,lwd=5)
-  polygon(c(x3,x2,x2+legoff,x3+legoff),c(y2+sepoff,y3+sepoff,y3+sepoff+legoff,y2+sepoff+legoff),density=0,lwd=5)
-
-  ############################################
-  ## Pastes levels, marginals into crosstab ##
-  ############################################
-  margin1 <- vector("numeric",nlev)
-  margin2 <- vector("numeric",nlev)
-
-  total.n <- 0
-
-  for (j in 1:nlev){
-    text(x1-xoff-xoff2+((((nlev-j)+(1/2))/nlev)*xavg),
-         y2+yoff+yoff2+sepoff+((((nlev-j)+(1/2))/nlev)*yavg),
-         paste(labs[j]), #lev
-         cex=0.7, #0.7 to 0.35
-         adj = adj[1],
-         srt = angle)
-    text(x2+xoff+xoff2+(((j-(1/2))/nlev)*xavg),
-         y2+yoff+yoff2+sepoff+((((nlev-j)+(1/2))/nlev)*yavg),
-         paste(labs[j]), #lev
-         cex=0.7,  #0.7 to 0.35
-         adj = adj[2],
-         srt = -angle)
-    margin1[j] <- length(data2[data1==lev[nlev+1-j]])
-    margin2[j] <- length(data1[data2==lev[nlev+1-j]])
-    text(x2+xoff+0.005+(((j-(1/2))/nlev)*xavg),y2-yoff-((((nlev-j)+(1/2))/nlev)*yavg),paste(margin1[j]),cex=0.8) #0.8 to 0.5
-    text(x1-xoff-0.005+((((nlev-j)+(1/2))/nlev)*xavg),y2-yoff-((((nlev-j)+(1/2))/nlev)*yavg),paste(margin2[j]),cex=0.8)  #0.8 to 0.5
-
-    polygon(c(x1+(((nlev-1)/(2*nlev))*xtot),
-              x1+(((nlev)/(2*nlev))*xtot),
-              x1+(((nlev+1)/(2*nlev))*xtot),
-              x1+(((nlev)/(2*nlev))*xtot)),
-            c(y1+((((2*nlev)+1-j-j)/(2*nlev))*ytot),
-              y1+((((2*nlev)+1-j-j-1)/(2*nlev))*ytot),
-              y1+((((2*nlev)+1-j-j)/(2*nlev))*ytot),
-              y1+((((2*nlev)+1-j-j+1)/(2*nlev))*ytot)),
-            density=0,lwd=4)
-
-    ## Print external labels
-    if(!is.null(ext.labels[1]) && ext.labels[1] != FALSE){
-
-      total.n <- total.n + length(unlist(strsplit(split = '\n',
-                                                  x = wrap_sentence(lev[nlev - j + 1],
-                                                                    width = 34))))
-
-      text(x = 0.02,
-           y = 0.01 + 0.0175*(j + total.n - 1),
-           labels = paste(labs[nlev - j + 1],'= '),
-           cex = 0.8,
-           adj = c(0, 1))
-
-
-      text(x = 0.055,
-           y = 0.01 + 0.0175*(j + total.n - 1),
-           labels = wrap_sentence(ext.labels[nlev - j + 1], width = 34),
-           cex = 0.8,
-           adj = c(0, 1))
-
-
-
+  if(PLOT){
+    for (i in 1:(nlev-1)){
+      segments(x1+((i/nlev)*xavg),y2+((i/nlev)*yavg),x2+((i/nlev)*xavg),y1+((i/nlev)*yavg),lty=1)
+      segments(x1+((i/nlev)*xavg),y2-((i/nlev)*yavg),x2+((i/nlev)*xavg),y3-((i/nlev)*yavg),lty=1)
+      segments(x1+((i/nlev)*xavg),y2+((i/nlev)*yavg),x1+((i/nlev)*xavg),y2+sepoff+((i/nlev)*yavg),lty=1,lwd=5)
+      segments(x1+((i/nlev)*xavg),y2+sepoff+((i/nlev)*yavg),x1-legoff+((i/nlev)*xavg),y2+legoff+sepoff+((i/nlev)*yavg),lty=1,lwd=4)
+      segments(x2+((i/nlev)*xavg),y3-((i/nlev)*yavg),x2+((i/nlev)*xavg),y3+sepoff-((i/nlev)*yavg),lty=1,lwd=5)
+      segments(x2+((i/nlev)*xavg),y3+sepoff-((i/nlev)*yavg),x2+legoff+((i/nlev)*xavg),y3+legoff+sepoff-((i/nlev)*yavg),lty=1,lwd=5)
     }
+
+    polygon(c(x1,x2,x3,x2),c(y2,y1,y2,y3),density=0)
+    polygon(c(x1,x2,x2,x1),c(y2,y3,y3+sepoff,y2+sepoff),density=0,lwd=5)
+    polygon(c(x3,x2,x2,x3),c(y2,y3,y3+sepoff,y2+sepoff),density=0,lwd=5)
+    polygon(c(x1,x2,x2-legoff,x1-legoff),c(y2+sepoff,y3+sepoff,y3+sepoff+legoff,y2+sepoff+legoff),density=0,lwd=5)
+    polygon(c(x3,x2,x2+legoff,x3+legoff),c(y2+sepoff,y3+sepoff,y3+sepoff+legoff,y2+sepoff+legoff),density=0,lwd=5)
+
+    ############################################
+    ## Pastes levels, marginals into crosstab ##
+    ############################################
+    margin1 <- vector("numeric",nlev)
+    margin2 <- vector("numeric",nlev)
+
+    total.n <- 0
+
+    for (j in 1:nlev){
+      text(x1-xoff-xoff2+((((nlev-j)+(1/2))/nlev)*xavg),
+           y2+yoff+yoff2+sepoff+((((nlev-j)+(1/2))/nlev)*yavg),
+           paste(labs[j]), #lev
+           cex=0.7, #0.7 to 0.35
+           adj = adj[1],
+           srt = angle)
+      text(x2+xoff+xoff2+(((j-(1/2))/nlev)*xavg),
+           y2+yoff+yoff2+sepoff+((((nlev-j)+(1/2))/nlev)*yavg),
+           paste(labs[j]), #lev
+           cex=0.7,  #0.7 to 0.35
+           adj = adj[2],
+           srt = -angle)
+      margin1[j] <- length(data2[data1==lev[nlev+1-j]])
+      margin2[j] <- length(data1[data2==lev[nlev+1-j]])
+      text(x2+xoff+0.005+(((j-(1/2))/nlev)*xavg),y2-yoff-((((nlev-j)+(1/2))/nlev)*yavg),paste(margin1[j]),cex=0.8) #0.8 to 0.5
+      text(x1-xoff-0.005+((((nlev-j)+(1/2))/nlev)*xavg),y2-yoff-((((nlev-j)+(1/2))/nlev)*yavg),paste(margin2[j]),cex=0.8)  #0.8 to 0.5
+
+      polygon(c(x1+(((nlev-1)/(2*nlev))*xtot),
+                x1+(((nlev)/(2*nlev))*xtot),
+                x1+(((nlev+1)/(2*nlev))*xtot),
+                x1+(((nlev)/(2*nlev))*xtot)),
+              c(y1+((((2*nlev)+1-j-j)/(2*nlev))*ytot),
+                y1+((((2*nlev)+1-j-j-1)/(2*nlev))*ytot),
+                y1+((((2*nlev)+1-j-j)/(2*nlev))*ytot),
+                y1+((((2*nlev)+1-j-j+1)/(2*nlev))*ytot)),
+              density=0,lwd=4)
+
+      ## Print external labels
+      if(!is.null(ext.labels[1]) && ext.labels[1] != FALSE){
+
+        total.n <- total.n + length(unlist(strsplit(split = '\n',
+                                                    x = wrap_sentence(lev[nlev - j + 1],
+                                                                      width = 34))))
+
+        text(x = 0.02,
+             y = 0.01 + 0.0175*(j + total.n - 1),
+             labels = paste(labs[nlev - j + 1],'= '),
+             cex = 0.8,
+             adj = c(0, 1))
+
+
+        text(x = 0.055,
+             y = 0.01 + 0.0175*(j + total.n - 1),
+             labels = wrap_sentence(ext.labels[nlev - j + 1], width = 34),
+             cex = 0.8,
+             adj = c(0, 1))
+
+
+
+      }
+    }
+
+
+    ################################
+    ## Prints sample size, labels ##
+    ################################
+    text((x2+x3+x3)/3,y1-0.03,paste("n = ",tot),cex=0.8)
+
+    text(x1+(xavg/2)-xoff-lab.xoff-sepoff-legoff,
+         y2+(yavg/2)+yoff+lab.yoff+sepoff+legoff,
+         paste(lab1),
+         cex=1.15,
+         srt=45)
+    text(x3-(xavg/2)+xoff+lab.xoff+sepoff+legoff,
+         y2+(yavg/2)+yoff+lab.yoff+sepoff+legoff,
+         paste(lab2),cex=1.15,srt=(-45))
+
+    ######################################################
+    ## Creates shading, puts in text for header, footer ##
+    ######################################################
+    ## par(new=TRUE)  par(fig=c(0,.62,.057,.863), mar=c(0,0,0,0),usr=c(0,1,0,1), new = TRUE)
+    ## par(new = TRUE)
+    par(fig = c(0,1,0,1), mar=mar,usr=c(0,1,0,1), new = TRUE)
+
+
+    points(x = 0.1, y = 0.0, col = 'blue', pch = 16)
+
+    polygon(c(0,0,1,1),c(0,0.05,0.05,0),col=(grey(0.85)))
+    polygon(c(0,0,1,1),c(1,0.87,0.87,1),col=(grey(0.85)))
+    polygon(c(0,0,1,1),c(0,0.05,0.05,0),density=0,lwd=3)
+    polygon(c(0,0,1,1),c(1,0.87,0.87,1),density=0,lwd=3)
+
+    text(.5,.945,paste(title1),cex=1.8)
+    text(.5,.895,paste(title2),cex=1.3)
+    text(.12,.025,paste(date()),cex=0.67)
+    text(.5,.025,paste(footer),cex=0.67)
+
+    ## draw segments to create panel
+    segments(0.62, 0.87, 0.62, 0.05,lwd = 3)
+
+    segments(0.62, 0.72, 1, 0.72, lwd = 3)
+    segments(0.62, 0.54, 1, 0.54, lwd = 2)
+    segments(0.62, 0.38, 1, 0.38, lwd = 1)
   }
-
-
-  ################################
-  ## Prints sample size, labels ##
-  ################################
-  text((x2+x3+x3)/3,y1-0.03,paste("n = ",tot),cex=0.8)
-
-  text(x1+(xavg/2)-xoff-lab.xoff-sepoff-legoff,
-       y2+(yavg/2)+yoff+lab.yoff+sepoff+legoff,
-       paste(lab1),
-       cex=1.15,
-       srt=45)
-  text(x3-(xavg/2)+xoff+lab.xoff+sepoff+legoff,
-       y2+(yavg/2)+yoff+lab.yoff+sepoff+legoff,
-       paste(lab2),cex=1.15,srt=(-45))
-
-  ######################################################
-  ## Creates shading, puts in text for header, footer ##
-  ######################################################
-  ## par(new=TRUE)  par(fig=c(0,.62,.057,.863), mar=c(0,0,0,0),usr=c(0,1,0,1), new = TRUE)
-  ## par(new = TRUE)
-  par(fig = c(0,1,0,1), mar=c(0,0,0,0),usr=c(0,1,0,1), new = TRUE)
-
-
-  points(x = 0.1, y = 0.0, col = 'blue', pch = 16)
-
-  polygon(c(0,0,1,1),c(0,0.05,0.05,0),col=(grey(0.85)))
-  polygon(c(0,0,1,1),c(1,0.87,0.87,1),col=(grey(0.85)))
-  polygon(c(0,0,1,1),c(0,0.05,0.05,0),density=0,lwd=3)
-  polygon(c(0,0,1,1),c(1,0.87,0.87,1),density=0,lwd=3)
-
-  text(.5,.945,paste(title1),cex=1.8)
-  text(.5,.895,paste(title2),cex=1.3)
-  text(.12,.025,paste(date()),cex=0.67)
-  text(.5,.025,paste(footer),cex=0.67)
-
-  ## draw segments to create panel
-  segments(0.62, 0.87, 0.62, 0.05,lwd = 3)
-
-  segments(0.62, 0.72, 1, 0.72, lwd = 3)
-  segments(0.62, 0.54, 1, 0.54, lwd = 2)
-  segments(0.62, 0.38, 1, 0.38, lwd = 1)
-
   ###############################################################
   ## Calculates cell of largest exact agreement and calculates ##
   ## exact agreement for crosstab                              ##
@@ -468,17 +479,15 @@ crossa <- function(data1a,
   ############################
   ##  text                  ##
   ############################
-  if (nlev > 3)
-  {
-    for(j in 1:3)
-    {
+  if (nlev > 3 & PLOT){
+    for(j in 1:3){
       text(0.74, jytext[j] + 0.01, paste(jtext[j]), cex = 1.05)
       text(0.74, jy[j] , paste("n = ", numb[j], "    (", perc[j], "%)"), cex = 1)
     }
   }
 
   ## Don't paste Within Two Steps for 4 levels
-  if ((1 < nlev) & (nlev < 4))
+  if ((1 < nlev) & (nlev < 4) & PLOT)
   {
     for(j in c(1,2))
     {
@@ -487,10 +496,8 @@ crossa <- function(data1a,
     }
   }
 
-  if (nlev < 2)
-  {
-    for(j in c(1,2))
-    {
+  if (nlev < 2 & PLOT){
+    for(j in c(1,2)){
       text(0.74, jytext[j] + 0.01, paste(jtext[j]), cex = 1.05)
       text(0.74, jy[j], paste("n = ", numb[j], "    (", perc[j], "%)"), cex = 1)
     }
@@ -498,20 +505,15 @@ crossa <- function(data1a,
   #######################################
   ## draw cells in segments            ##
   #######################################
-  if (nlev > 3)
-  {
-    for( j in c(1,2,3) )
-    {
-      if(j ==1)
-      {
-        for(k in 1:5)   ###  exact agreement cells in segment
-        {
+  if (nlev > 3 & PLOT){
+    for( j in c(1,2,3) ){
+      if(j ==1){
+        for(k in 1:5){   ###  exact agreement cells in segment
           kk <- k * 0.02
           polygon(c(jx + 0.05, jx + 0.06, jx + 0.05, jx + 0.04), c(jy[j] + 0.07 - kk, jy[ j] + 0.06 - kk, jy[j] + 0.05 - kk, jy[j] + 0.06 - kk), col = (grey(0.6)))
         }
       }
-      if(j ==2)
-      {
+      if(j ==2){
         for(k in 1:5)      ###  exact agreement cells in segment
         {
           kk <- k * 0.02
@@ -562,7 +564,7 @@ crossa <- function(data1a,
 
   ###################################################################################################
   ###################################################################################################
-  if ((1 < nlev) & (nlev <  4))  ## don't draw within two steps cells if there are only three levels
+  if ((1 < nlev) & (nlev <  4) & PLOT)  ## don't draw within two steps cells if there are only three levels
   {
     for( j in c(1,2) )
     {
@@ -600,8 +602,7 @@ crossa <- function(data1a,
     }
   }
 
-  if (nlev < 2)
-  {
+  if (nlev < 2 & PLOT){
     for( j in c(1) )
     {
       if(j ==1)
@@ -650,22 +651,25 @@ crossa <- function(data1a,
   tmp2 <- unfolded.kappa(data1,data2, wgt=wgt2, cantgrade = cantgrade)
   ## tmp3 <- unfolded.kappa(data1,data2,wgt=wgt3)
 
+
   ## output kappa statistics
-  text(0.81, 0.3450, paste("Kappa = ", round(tmp1$kappa,2), " (SE = ", round(tmp1$se,2), ")"), cex =1.05)
-  text(0.81, 0.3050, paste("95% CI for Kappa: (", round(tmp1$ci[1],2), ", ", round(tmp1$ci[2],2), ")"), cex = 0.8)
-  if (nlev > 2)
-  {
-    text(0.81, 0.2550, paste("Weighted Kappa = ", round(tmp2$kappa,2), " (SE = ", round(tmp2$se,2), ")"), cex = 1.05)
-    text(0.81, 0.2150, paste("95% CI for Weighted Kappa: (", round(tmp2$ci[1],2), ", ", round(tmp2$ci[2],2), ")"), cex = 0.8)
-    # }
-    # if (nlev > 4)
-    # {
-    #  text(0.805, 0.1650, paste("Weighted Kappa 2 = ", round(tmp3$kappa,2), " (SE = ", round(tmp3$se,2), ")"), cex = 1.05)
-    #  text(0.81, 0.1250, paste("95% CI for Weighted Kappa 2: (", round(tmp3$ci[1],2), ", ", round(tmp3$ci[2],2), ")"), cex = 0.8)
-    text(0.795, 0.165, paste("* Weights: 1 for Complete Agreement"), cex = 0.8)
-    text(0.815, 0.135, paste("0.75 for One Step Disagreement"), cex = 0.8)
-    text(0.815, 0.105, paste("0 for All Other Disagreement"), cex = 0.8)
+  if(PLOT){
+    text(0.81, 0.3450, paste("Kappa = ", round(tmp1$kappa,2), " (SE = ", round(tmp1$se,2), ")"), cex =1.05)
+    text(0.81, 0.3050, paste("95% CI for Kappa: (", round(tmp1$ci[1],2), ", ", round(tmp1$ci[2],2), ")"), cex = 0.8)
+    if (nlev > 2){
+      text(0.81, 0.2550, paste("Weighted Kappa = ", round(tmp2$kappa,2), " (SE = ", round(tmp2$se,2), ")"), cex = 1.05)
+      text(0.81, 0.2150, paste("95% CI for Weighted Kappa: (", round(tmp2$ci[1],2), ", ", round(tmp2$ci[2],2), ")"), cex = 0.8)
+      # }
+      # if (nlev > 4)
+      # {
+      #  text(0.805, 0.1650, paste("Weighted Kappa 2 = ", round(tmp3$kappa,2), " (SE = ", round(tmp3$se,2), ")"), cex = 1.05)
+      #  text(0.81, 0.1250, paste("95% CI for Weighted Kappa 2: (", round(tmp3$ci[1],2), ", ", round(tmp3$ci[2],2), ")"), cex = 0.8)
+      text(0.795, 0.165, paste("* Weights: 1 for Complete Agreement"), cex = 0.8)
+      text(0.815, 0.135, paste("0.75 for One Step Disagreement"), cex = 0.8)
+      text(0.815, 0.105, paste("0 for All Other Disagreement"), cex = 0.8)
+    }
   }
+
   exact<-cnt
   pexact<-round(pctcnt*100,2)
   exon0<-nn0
@@ -685,7 +689,8 @@ crossa <- function(data1a,
   } else {
     wkappa<-kappa
   }
-  ##return(data.frame(tot,exact,pexact,exon0,pexon0,exels,pexels,w1s,pw1s,kappa,wkappa))
+
+
   return(data.frame(tot,kappa,wkappa,exact,pexact, w1s,pw1s,w2s,pw2s))
 
 

@@ -4,7 +4,8 @@
 \alias{exact.agree.table}
 \title{Table with Exact Agreement}
 \usage{
-exact.agree.table(data, crossA, plotX, grads, nes = c("", NA, "Cannot grade"))
+exact.agree.table(data, crossA, plotX, grads, nes = c("", NA),
+  cantgrade.crossA = NULL, cantgrade.plotX = NULL)
 }
 \arguments{
 \item{data}{Data to use}
@@ -21,4 +22,3 @@ exact.agree.table(data, crossA, plotX, grads, nes = c("", NA, "Cannot grade"))
 Calculates agreement table for overall team and for graders
 individually.
 }
-

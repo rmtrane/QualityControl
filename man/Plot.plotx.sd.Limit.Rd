@@ -4,18 +4,17 @@
 \alias{Plot.plotx.sd.Limit}
 \title{Wrapper for twograders.plotx and sd.plotaLimit}
 \usage{
-Plot.plotx.sd.Limit(data = NULL, plotX = NULL, vars = "all",
-  lab1 = "ST", lab2 = "QC", sep = ".", nes = c("", NA), ranges = c(1,
-  2, 5), cantgrade = 8888, foottext = "", title2 = "",
-  show.plot = FALSE)
+Plot.plotx.sd.Limit(data = NULL, plotX = NULL, var.units = NULL,
+  vars = "all", lab1 = "ST", lab2 = "QC", sep = ".", nes = c("", NA),
+  ranges = c(1, 2, 5), cantgrade = 8888, foottext = "", title2 = "",
+  plot.type = c("sd.plotaLimit", "twograders.plotx"), show.progress = TRUE,
+  show.plot = FALSE, mar = c(0, 0, 0, 0), CI_use_quantiles = FALSE)
 }
 \arguments{
 \item{data}{dataset}
 
-\item{plotX}{named vector containing variables from
-data. Names are used as titles for
-the plots. If not named, the variable itself
-will be used.}
+\item{plotX}{named vector containing variables from data. Names are used as titles for
+the plots. If not named, the variable itself will be used.}
 
 \item{vars}{indicates which variables should be plotted. Default is 'all'}
 
@@ -31,7 +30,17 @@ will be used.}
 
 \item{title2}{character string to use as subtitle for plots}
 
+\item{plot.type}{character vector specifying which figure(s) to plot. Can be one: "sd.plotaLimit", "twograders.plotx", or c('sd.plotaLimit', 'twograders.plotx') (latter is default)}
+
+\item{show.progress}{logical; should the variable names be printed when plotted? (defualt TRUE)}
+
 \item{show.plot}{logical; should the plots be plotted one by one? (click for next, default FALSE)}
+
+\item{mar}{margin to be passed to plots. Set to c(0,0,0,0) when printing multiple plots to PDF.}
+
+\item{CI_use_quantiles}{logical; passed to sd.plotaLimit.}
+
+\item{var.unit}{named vector containing strings to be included as units. Added to the title in parenthesis. Expressions can be included by enclosing in #. For example: #mm^2#. Names of vector should correspond to names of crossA vector, or if crossA vector is unnamed, to elements of crossA.}
 }
 \description{
 For a given dataset and a named vector with
@@ -39,4 +48,3 @@ variables from that dataset, this function creates
 twograders.plotx and sd.plotaLimit (when appropriate) plots
 for all variables.
 }
-

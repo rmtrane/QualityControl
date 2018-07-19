@@ -5,7 +5,8 @@
 \title{Cross Tabs with Shading Algorithms}
 \usage{
 crossa(data1a, lab1, data2a, lab2, cantgrade, title1 = "", footer = "",
-  title2 = "", ext.labels = NULL)
+  title2 = "", ext.labels = NULL, cex = 1, PLOT = TRUE, mar = c(0, 0,
+  0, 0))
 }
 \arguments{
 \item{lab1}{label for data1}
@@ -25,6 +26,12 @@ should not be included in within one step calculations.}
 vector with same length as there are levels of the variable considered, with strings
 to be stand-in for labels in squares while actual labels are printed in the lower left
 corner. If true, numbers are used as labels and automatically}
+
+\item{cex}{numeric; passed to par. Default 1.}
+
+\item{PLOT}{logical; if TRUE (default), figure is plotted. If FALSE, summary returned without any figures.}
+
+\item{mar}{vector of length four. Is passed to the mar argument of par. Default: c(0,0,0,0)}
 
 \item{data1}{a vector of grades from grader 1; not a factor}
 
@@ -47,5 +54,5 @@ crossa(data1a = FIDI$CNVPRS.F,
        footer = "Comparison of Digital Synthetic Grades and
                 Film Synthetic Grades")
                 }
+                data1a,
 }
-

@@ -16,4 +16,3 @@ save.exact(exact.agreement, path, file)
 \description{
 save.exact writes the results of exact.agree.table to excel spreadsheets. One for each grader together with one containing everything.
 }
-

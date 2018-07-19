@@ -6,7 +6,8 @@
 \usage{
 Plot.crossA(data, crossAs = NULL, vars = "all", lab1 = "ST",
   lab2 = "QC", cannotgrades = NULL, foottext = NULL, show.plot = FALSE,
-  sep = ".", nes = c("", NA), title2 = "", ext.labels = NULL)
+  show.progress = TRUE, sep = ".", nes = c("", NA), title2 = "",
+  ext.labels = NULL, cex = 1, PLOT = TRUE, mar = c(0, 0, 0, 0))
 }
 \arguments{
 \item{data}{dataset that includes columns named <var>.QC and <var>.ST for all <var> in crossAs}
@@ -36,15 +37,16 @@ coded. Names should be identical to names(crossAs)}
 \item{title2}{character string to use as subtitle for plots}
 
 \item{ext.labels}{if NULL (default), labels printed in squares. Otherwise, character
-vector with same length as there are levels of the variable considered, with strings
-to be stand-in for labels in squares while actual labels are printed in the lower left
-corner. If true, numbers are used as labels and automatically.}
+vector with same length as vars, with strings to be stand-in for labels in squares while actual labels
+are printed in the lower left corner. If elements are not strings, but TRUE/FALSE, numbers are used as labels
+for TRUE entries. If simply TRUE, external labels will be used for all variables.}
 
-\item{angle}{numeric; should variable categories be angled when added?}
+\item{cex}{numeric; passed to crossa. Default 1.}
+
+\item{PLOT}{logical; if TRUE (default), figure is plotted. If FALSE, summary returned without any figures.}
 }
 \description{
 For a given dataset and a named vector with
 variables from that dataset, this function creates
 crossa plots for all variables.
 }
-

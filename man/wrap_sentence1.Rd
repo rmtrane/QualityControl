@@ -15,4 +15,3 @@ wrap_sentence1(string, width)
 This is used to wrap long level names of factors for plotting of crossA plots.
 It will first split according to commas, then according to words.
 }
-

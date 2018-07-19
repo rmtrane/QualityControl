@@ -20,4 +20,3 @@ right.subset.R(x, var, out = c("ST", "QC"), sep = ".", nes = "")
 \description{
 Function to select the right subset of the data
 }
-

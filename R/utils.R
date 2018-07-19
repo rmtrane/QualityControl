@@ -14,6 +14,39 @@ load.file <- function(data.dir, file){
   return(out)
 }
 
+#' Recode DR Severity Levels
+#'
+#' Takes a vector of DR Severity levels and returns the recoded values. 'Not applicable' is turned into NA.
+#'
+#' @param DRSeverity vector of severity levels to be recoded
+#'
+#' @export
+
+recode_DRsev <- function(DRSeverity){
+
+  DRSeverity <- case_when(DRSeverity == 'Not applicable' ~ as.character(NA),
+                          TRUE ~ str_sub(DRSeverity, start = 1, end = 2))
+
+  recode <- case_when(
+    DRSeverity %in% c(10, 12) ~ 1,
+    DRSeverity %in% c(14, 15, 20) ~ 2,
+    DRSeverity %in% c(35) ~ 3,
+    DRSeverity %in% c(43) ~ 4,
+    DRSeverity %in% c(47) ~ 5,
+    DRSeverity %in% c(53) ~ 6,
+    DRSeverity %in% c(60, 61) ~ 7,
+    DRSeverity %in% c(65) ~ 8,
+    DRSeverity %in% c(71) ~ 9,
+    DRSeverity %in% c(75) ~ 10,
+    DRSeverity %in% c(81) ~ 11,
+    DRSeverity %in% c(85) ~ 12,
+    DRSeverity %in% c(90) ~ 90,
+    TRUE ~ as.numeric(NA)
+  ) %>% factor(levels = c(1:12, 90, NA))
+
+  return(recode)
+
+}
 
 
 #' Function to replace Absent and Questionable levels with A/Q.
@@ -21,6 +54,7 @@ load.file <- function(data.dir, file){
 #' Takes a character vector or factor and returns a vector where Absent and Questionable entries are replaced by A/Q.
 #'
 #' @param x character vector or factor
+#' @param levels if NULL (defualt), unique values of x will be used. If provided, will be used as levels.
 #'
 #' @export
 
@@ -40,6 +74,7 @@ AQFactor <- function(x, levels = NULL){
   return(x)
 }
 
+
 multijudge=function(data,values){
   index=NULL
   for(i in 1:length(values)){
@@ -57,6 +92,7 @@ multijudge=function(data,values){
 #' @param grade1 vector containing gradings done by grader 1
 #' @param grade2 vector containing gradings done by grader 2
 #' @param digits number of digits to round to; default 3
+#'
 #' @export
 
 ICC <- function(grade1, grade2, digits = 3){
@@ -96,14 +132,18 @@ right.subset2 <- function(x, var, out = c('ST', 'QC')){
 right.subset.R <- function(x, var, out = c('ST', 'QC'), sep = '.', nes = ''){
   if('dplyr' %in% loadedNamespaces()){
     tmp <- x[, paste(var, c('ST', 'QC'), sep = sep)] %>%
-      #select_(.dots = as.list()) %>%
       mutate(ss = apply(., 1, function(x){ sum(x %in% nes) == 0})) %>%
       filter(ss)
 
     tmp <- tmp[,paste(var, out, sep = sep)]
 
-    if(!is.null(dim(tmp)) & length(out) < 2)
+    if(!is.null(dim(tmp)) & length(out) < 2){
       tmp <- tmp[[1]]
+
+      if(is.factor(tmp)){
+        tmp <- factor(tmp, levels = levels(tmp)[!levels(tmp) %in% nes])
+      }
+    }
 
     return(tmp)
 
@@ -122,7 +162,7 @@ right.subset.R <- function(x, var, out = c('ST', 'QC'), sep = '.', nes = ''){
 #' spit out the wanted name.
 #'
 #' @param names Names to convert
-#' @param out_format Should names be returned as Full, First, or Last Name
+#' @param out_format Should names be returned as Full Name, First Name, Last Name, or Number
 #' @param ig.case ignore case when matching?
 #' @param conversion_document either matrix with two columns or path to document containing conversion
 #' scheme. (If document, remember 'load = TRUE'.) Should consist of two columns, first with first and
@@ -141,7 +181,7 @@ right.subset.R <- function(x, var, out = c('ST', 'QC'), sep = '.', nes = ''){
 
 
 convert_names <- function(names,
-                          out_format = c('Full Name', 'First Name', 'Last Name'),
+                          out_format = c('Full Name', 'First Name', 'Last Name', 'Number'),
                           conversion_document = 'K:/Stat/RMT/grader_names.xlsx',
                           load = TRUE,
                           ig.case = TRUE){
@@ -149,21 +189,23 @@ convert_names <- function(names,
 
   if (load)
     conv.scheme <- readxl::read_excel(conversion_document) %>%
-          select(`Full Name`, `All Known Names`) %>%
-          group_by(`Full Name`) %>%
-          filter(row_number() == 1)
+      dplyr::select(`Full Name`, `All Known Names`) %>%
+      group_by(`Full Name`) %>%
+      filter(row_number() == 1)
 
   conv.scheme <- conv.scheme %>%
-      mutate(`All Known Names` = str_split(`All Known Names`,
-                                           pattern = ';')) %>%
-      unnest(`All Known Names`) %>%
-      mutate(`All Known Names` = str_trim(`All Known Names`))
+    mutate(`All Known Names` = str_split(`All Known Names`,
+                                         pattern = ';')) %>%
+    unnest(`All Known Names`) %>%
+    mutate(`All Known Names` = str_trim(`All Known Names`))
 
-  full_names <- tibble(`All Known Names` = names) %>%
-      left_join(conv.scheme, by = 'All Known Names') %>%
-      mutate(`Names` = `Full Name`) %>%
-      separate(`Names`, into = c('First Name', 'Last Name'), sep = ' ', extra = 'merge') %>%
-      separate(`Last Name`, into = c('Middle Name', 'Last Name'), fill = 'left')
+  full_names <- tibble(`All Known Names` = as.character(names)) %>%
+    left_join(conv.scheme, by = 'All Known Names') %>%
+    rename(input_name = `All Known Names`) %>%
+    mutate(`Names` = `Full Name`) %>%
+    separate(`Names`, into = c('First Name', 'Last Name'), sep = ' ', extra = 'merge') %>%
+    separate(`Last Name`, into = c('Middle Name', 'Last Name'), fill = 'left') %>%
+    left_join(conv.scheme %>% filter(!is.na(as.numeric(`All Known Names`))) %>% rename(Number = `All Known Names`))
 
   if(length(out_format) == 1){
     ret <- full_names[[out_format]]
@@ -172,6 +214,44 @@ convert_names <- function(names,
   }
 
   return(ret)
+}
+
+#' Convert Modalities
+#'
+#' Takes any modality from any of the modalities listed in the spreadsheet provided and
+#' spits out any combination of the following: New Label, Eyes Graded, Minutes.
+#'
+#' @param modals Modalities to convert
+#' @param output Any combination of 'New Labels' and 'Modality'
+#' @param conversion_document Document from which the conversion matrix should be loaded.
+#' @param sheet If not first sheet in conversion_document, then specify here
+#'
+#' @export
+
+convert_modals <- function(modals,
+                           output = c('New Labels', 'Modality'),
+                           conversion_document = "K:/Stat/RMT/Efficiency Reports/Data/modalities_conversion.xlsx",
+                           sheet = 'modals_only'){
+
+  tmp <- readxl::read_excel(path = conversion_document,
+                            sheet = sheet) %>%
+    mutate(Modals = str_split(Modals, pattern = ',')) %>%
+    unnest() %>%
+    mutate(Modals = str_trim(Modals)) %>%
+    dplyr::rename(Modality = Modals)
+
+  if(length(output) == 1){
+    tmp <- tmp %>%
+      right_join(tibble(Modality = modals)) %>%
+      pull(!!output)
+  } else {
+    tmp <- tmp %>%
+      right_join(tibble(Modality = modals)) %>%
+      dplyr::select(!!output)
+  }
+
+  return(tmp)
+
 }
 
 

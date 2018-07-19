@@ -14,4 +14,3 @@ load.file(data.dir, file)
 \description{
 Loads the file called `file` from folder `data.dir` and creates `Project` variable with value filename
 }
-

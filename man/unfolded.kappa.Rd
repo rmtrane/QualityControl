@@ -23,4 +23,3 @@ unfolded.kappa(x, y, lev = unique(c(levels(x), levels(y))), nlev = NULL,
 \description{
 Caculates the kappa statistic with an option of weights
 }
-

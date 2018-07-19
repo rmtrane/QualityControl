@@ -16,4 +16,3 @@ ICC(grade1, grade2, digits = 3)
 \description{
 Calculates interclass correlation between two graders.
 }
-

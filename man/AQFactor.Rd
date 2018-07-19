@@ -4,12 +4,13 @@
 \alias{AQFactor}
 \title{Function to replace Absent and Questionable levels with A/Q.}
 \usage{
-AQFactor(x)
+AQFactor(x, levels = NULL)
 }
 \arguments{
 \item{x}{character vector or factor}
+
+\item{levels}{if NULL (defualt), unique values of x will be used. If provided, will be used as levels.}
 }
 \description{
 Takes a character vector or factor and returns a vector where Absent and Questionable entries are replaced by A/Q.
 }
-

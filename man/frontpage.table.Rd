@@ -4,17 +4,19 @@
 \alias{frontpage.table}
 \title{Table for Front Page of Report}
 \usage{
-frontpage.table(data, QCST = c("QC", "ST"), col1 = "Project", col1.name)
+frontpage.table(data, QCST = c("QC", "ST"), col1 = "Project", col1.name,
+  date_format = "\%Y-\%m-\%d")
 }
 \arguments{
 \item{data}{data set used for analysis}
 
-\item{QCST}{use QC or ST as PerformedDate variable}
+\item{QCST}{use QC or ST for PerformedDate variable}
 
-\item{col1}{default 'Project'. Indicates what should be in column 1, and hence, what should be the stratifying variable?}
+\item{col1}{default 'Project'. Indicates what should be in column 1, and hence, what should be the stratifying variable? Usually choose between Project/Study or Grader.}
+
+\item{date_format}{string specifying the date format.}
 }
 \description{
 Summarizes the data for the front page table. Output is an array with four columns:
-Trial/Modality, N, Grading Start Date, and Grading End Date.
+Trial/Modality, N, Grading Start Date, and Grading End Date. To be used in report.rmd.
 }
-

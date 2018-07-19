@@ -5,9 +5,12 @@
 \title{Bland-Altman Plot with Confidence Interval}
 \usage{
 sd.plotaLimit(grade1a, grade2a, label1, label2, range1, range2, range3,
-  ptsz = 0.7, cantgrade = "", maintitle = "", subtitle = "",
-  footer = "", x1 = -999, x2 = -999, y1 = -999, y2 = -999,
-  factor = 1e-08, spline = FALSE)
+  ptsz = 0.7, cantgrade = c("", "Not applicable"), maintitle = "",
+  subtitle = "", footer = "", x1 = -999, x2 = -999, y1 = -999,
+  y2 = -999, factor = 1e-08, spline = FALSE,
+  xlab = "Average of the Two Grades", ylab = "Difference of the Two Grades",
+  ylimit = NULL, CI_background = grey(1), CI_use_quantiles = FALSE,
+  mar = c(0, 0, 0, 0))
 }
 \arguments{
 \item{grade1a}{a vector of grades}
@@ -24,25 +27,37 @@ sd.plotaLimit(grade1a, grade2a, label1, label2, range1, range2, range3,
 
 \item{range3}{numeric}
 
-\item{cantgrade}{character/numeric used to indicate cannot grade}
+\item{ptsz}{numeric; passed to the cex arguments of points. Default is 0.7}
 
-\item{maintitle}{main title of graph}
+\item{cantgrade}{character/numeric vector used to indicate cannot grade. Default: c('', 'Not applicable')}
+
+\item{maintitle}{main title of graph. If units included, expressions can be preserved by surrounding them with #. Example: #mm^2#.}
 
 \item{subtitle}{sub title of graph}
 
 \item{footer}{footer}
 
-\item{x1, x2}{range of x axis -- if -999, the range is calculated based on the data}
+\item{x1, x2}{range of x axis -- if -999 (default), the range is calculated based on the data}
 
-\item{y1, y2}{range of y axis -- if -999, the range is calculated based on the data}
+\item{y1, y2}{range of y axis -- if -999 (default), the range is calculated based on the data}
 
 \item{factor}{numeric; passed to jitter for plotting of data points. Adjusts how spread out the points are.}
+
+\item{xlab}{label for x-axis}
+
+\item{ylab}{label for y-axs}
+
+\item{ylimit}{numeric vector; overwrites y1, y2 for y limits}
+
+\item{CI_background}{color for confidence interval background}
+
+\item{CI_use_quantiles}{logical; if FALSE (default), use mean +/- 1.96 SD as confidence interval. If TRUE, use quantiles.}
+
+\item{mar}{margin passed to par. Set to c(0,0,0,0) for printing to pdf file.}
 }
 \description{
 Creates a plot of the difference between two grades against
-the mean of the two grades with smooth mean and smoothed 95%
-bound for continuous type data.
-Calculates the mean difference, intra-class correlation,
-within [range1](\%) and within [range2](\%)
+the mean of the two grades with mean and 95% bound for continuous type data.
+Calculates the mean difference, intra-class correlation, and n (\%) within [range1],
+[range2], and [range3].
 }
-

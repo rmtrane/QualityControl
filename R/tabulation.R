@@ -9,6 +9,8 @@
 #' @param fieldname vector with names for rows in table
 #' @param stat0 list of vectors with statistics to include. If NULL, statistics must be provided using stat1, ..., stat12
 #' @param stat1,...,stat12 vectors with statistics to include
+#' @param width numeric; defuault is 30.
+#' @param cex.factor numeric; factor to multiply all cex values by.
 #'
 #' @export
 
@@ -46,14 +48,23 @@ tabulation <- function(style = c("icc", "wkappa"),
                        subtitle = "",
                        footer = "",
                        fieldname = "",
+                       cex.factor = 1,
                        width = 30,
                        stat0 = NULL,
                        stat1 = -999,
                        stat2 = -999,
-                       stat3 = -999, stat4 = -999, stat5 = -999, stat6 = -999, stat7 = -999, stat8 = -999, stat9 = -999
-                       , stat10 = -999, stat11 = -999, stat12 = -999)
+                       stat3 = -999,
+                       stat4 = -999,
+                       stat5 = -999,
+                       stat6 = -999,
+                       stat7 = -999,
+                       stat8 = -999,
+                       stat9 = -999,
+                       stat10 = -999,
+                       stat11 = -999,
+                       stat12 = -999)
 {
-  plot.new()
+
   #### the column names ###########
   if(style == "icc") {
     ctext <- c("Sample \n Size", "Agree \n Within 0.5", "(%)",
@@ -66,21 +77,28 @@ tabulation <- function(style = c("icc", "wkappa"),
                "Within \n One Step", "(  %)", "Within \n Two Steps", "(  %)")#, "")
   }
 
+  ## Row names
   rtext <- fieldname
+
+  ## Dimensions
   rownum <- length(rtext)
   colnum <- length(ctext)
 
+  ## Set layout.
+  par(fig = c(0, 1, 0, 1), mar = c(0, 0, 0, 0), usr = c(0, 1, 0, 1))
+  plot.new()
   par(fig = c(0, 1, 0, 1), mar = c(0, 0, 0, 0), usr = c(0, 1, 0, 1),
       new = TRUE, lheight = 0.8)
+
   ## put in title, footer information ##
-  text(0.12, 0.025, date(), cex = 0.67)
-  text(0.5, 0.025, paste(footer), cex = 0.67)
-  text(0.5, 0.965, paste(maintitle), cex = 1)
+  text(0.12, 0.025, date(), cex = 0.67*cex.factor)
+  text(0.5, 0.025, paste(footer), cex = 0.67*cex.factor)
+  text(0.5, 0.965, paste(maintitle), cex = 1*cex.factor)
   ##1.5
-  text(0.5, 0.92, paste(subtitle), cex = 1)
+  text(0.5, 0.92, paste(subtitle), cex = 1*cex.factor)
   ## put in summary statistics ##
   for(j in 1:colnum){
-    text(0.18 + (0.765/colnum) * j, 0.85, paste(ctext[j]), cex = 0.6)
+    text(0.18 + (0.765/colnum) * j, 0.85, paste(ctext[j]), cex = 0.6*cex.factor)
     ##0.8
     if(is.null(stat0)){
       out <- c(stat1[j], stat2[j], stat3[j],
@@ -93,11 +111,13 @@ tabulation <- function(style = c("icc", "wkappa"),
         out <- c(out, stat0[[o]][j])
       }
     }
-    
+
+    ## If extra lines are needed due to long row names, this will be used to count them so that y positions can be proberly adjusted.
     extra.lines <- rep(0, rownum)
-    
+
     row.y <- 0.82
-    
+
+    ## Fill out row names
     for(i in 1:rownum){
       if(grepl(pattern = '#', rtext[i], fixed = TRUE)){
 
@@ -107,26 +127,26 @@ tabulation <- function(style = c("icc", "wkappa"),
 
         express <- parse(text = new.rtext[2])[[1]]
 
-        text(0.14, row.y - 0.06 * i, bquote(.(new.rtext[1])*.(express)*.(new.rtext[3])), cex = 0.7)
+        text(0.14, row.y - 0.06 * i, bquote(.(new.rtext[1])*.(express)*.(new.rtext[3])), cex = 0.7*cex.factor)
       } else {
-        extra.lines[i] <- 
+        extra.lines[i] <-
               str_count(string = wrap_sentence(rtext[i], width = width),
                         pattern = '\n')
-        
+
         text(0.14, row.y - 0.06 * i, paste(wrap_sentence(rtext[i], width = width)),
-             #rtext[i], 
-             cex = 0.7)
+             #rtext[i],
+             cex = 0.7*cex.factor)
       }
-    
-        text(0.18 + (0.765/colnum) * j, 0.82 - 0.06 * i, paste(out[i]), cex = 0.6)
-        
-        segments(0.01, 0.785 - 0.06 * (i), 0.985, 0.785 - 0.06 * (i))
-      
-      
+
+        text(0.18 + (0.765/colnum) * j, 0.82 - 0.06 * i, paste(out[i]), cex = 0.6*cex.factor)
+
+        segments(0.01, 0.785 - 0.06 * (i), 0.99, 0.785 - 0.06 * (i))
+
+
     }
   }
-  segments(0.01, 0.89, 0.985, 0.89)
-  segments(0.01, 0.785, 0.985, 0.785)
+  segments(0.01, 0.89, 0.99, 0.89)
+  segments(0.01, 0.785, 0.99, 0.785)
   segments(0.01, 0.05, 0.01, 0.89)
   segments(0.99, 0.05, 0.99, 0.89)
   segments(0.01, 0.05, 0.99, 0.05)

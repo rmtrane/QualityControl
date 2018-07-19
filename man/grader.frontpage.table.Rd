@@ -14,4 +14,3 @@ grader.frontpage.table(data, QCST = c("ST", "QC"))
 \description{
 Creates table with four columns: QC Grader, N, QC Grading Start Date, QC Grading End Date
 }
-

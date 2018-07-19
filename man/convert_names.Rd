@@ -4,14 +4,14 @@
 \alias{convert_names}
 \title{Convert Names}
 \usage{
-convert_names(names, out_format = c("Full Name", "First Name", "Last Name"),
-  conversion_document = "K:/Stat/RMT/grader_names.xlsx", load = TRUE,
-  ig.case = TRUE)
+convert_names(names, out_format = c("Full Name", "First Name", "Last Name",
+  "Number"), conversion_document = "K:/Stat/RMT/grader_names.xlsx",
+  load = TRUE, ig.case = TRUE)
 }
 \arguments{
 \item{names}{Names to convert}
 
-\item{out_format}{Should names be returned as Full, First, or Last Name}
+\item{out_format}{Should names be returned as Full Name, First Name, Last Name, or Number}
 
 \item{conversion_document}{either matrix with two columns or path to document containing conversion
 scheme. (If document, remember 'load = TRUE'.) Should consist of two columns, first with first and
@@ -33,4 +33,3 @@ convert_names(names = c('pak', 'sheila'),
               load = TRUE,
               ig.case = TRUE)}
 }
-

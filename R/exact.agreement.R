@@ -10,7 +10,6 @@
 #' @param nes vector with character strings to exclude
 #'
 #' @export
-#'
 
 exact.agree.table <- function(data, crossA, plotX, grads, nes = c('', NA),
                               cantgrade.crossA = NULL, cantgrade.plotX = NULL){

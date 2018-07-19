@@ -6,8 +6,8 @@
 \usage{
 twograders.plotx(grade1a, grade2a, label1, label2, range1, range2,
   range3 = 9999, ptsz = 0.7, lab = c(5, 5, 7), cantgrade = "",
-  maintitle = "", subtitle = "", footer = "", x1 = -999, x2 = -999,
-  y1 = -999, y2 = -999)
+  maintitle = "", subtitle = "", footer = "", shiny = FALSE,
+  x1 = -999, x2 = -999, y1 = -999, y2 = -999, mar = c(0, 0, 0, 0))
 }
 \arguments{
 \item{grade1a}{vector of grades}
@@ -40,4 +40,3 @@ continuous type data.
 Calculates the mean difference, intra-class correlaion, within [range1] (\%),
 and within [range2](\%)
 }
-
